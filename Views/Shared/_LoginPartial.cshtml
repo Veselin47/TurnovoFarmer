@@ -1,0 +1,39 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using TurnovoFarmer.Models.Constants
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Order" asp-action="MyOrders">Моите поръчки</a>
+    </li>
+    @if (User.IsInRole(AppRoles.Farmer) || User.IsInRole(AppRoles.Admin))
+    {
+        <li class="nav-item">
+            <a class="nav-link btn-farmer-nav mx-lg-1 my-1" asp-controller="Farmer" asp-action="Index">
+                🚜 Панел за управление
+            </a>
+        </li>
+    }
+    <li class="nav-item d-none d-lg-block">
+        <span class="nav-link user-greeting py-1">
+            Здравей, @(User.Identity?.Name?.Split('@')[0])!
+        </span>
+    </li>
+    <li class="nav-item">
+        <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout"
+              asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="nav-link btn btn-link btn-logout-nav py-1">Изход</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Вход</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link btn-farmer-nav mx-lg-1 my-1" asp-area="Identity" asp-page="/Account/Register">Регистрация</a>
+    </li>
+}

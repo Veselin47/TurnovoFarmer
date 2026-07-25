@@ -1,0 +1,47 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Вход";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-logo">🥦</div>
+            <h2 class="mb-1">Добре дошли отново</h2>
+            <p class="text-muted small">Влезте в акаунта си, за да продължите</p>
+        </div>
+
+        <form id="account" method="post" asp-route-returnUrl="@Model.ReturnUrl">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="ivan@example.com" />
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-organic w-100 py-2">Вход</button>
+        </form>
+
+        <p class="text-center text-muted small mt-4 mb-0">
+            Нямаш акаунт?
+            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-success fw-semibold text-decoration-none">Регистрирай се</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

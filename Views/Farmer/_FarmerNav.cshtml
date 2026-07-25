@@ -1,0 +1,17 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<div class="farmer-sidebar-nav mb-4 mb-lg-0">
+    <nav class="nav flex-column">
+        <a class="nav-link @(currentAction == "Index" || currentAction == "DeliverySheet" ? "active" : "")" asp-action="Index">
+            🚜 Табло
+        </a>
+        <a class="nav-link @(currentAction == "ManageSchedules" || currentAction == "CreateSchedule" ? "active" : "")" asp-action="ManageSchedules">
+            📅 Управление на графици
+        </a>
+        <a class="nav-link @(currentAction == "ManageProducts" || currentAction == "CreateProduct" || currentAction == "EditProduct" ? "active" : "")" asp-action="ManageProducts">
+            📦 Управление на продукти
+        </a>
+    </nav>
+</div>

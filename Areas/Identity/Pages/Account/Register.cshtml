@@ -1,0 +1,55 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Регистрация";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-logo">🌿</div>
+            <h2 class="mb-1">Създай акаунт</h2>
+            <p class="text-muted small">Присъедини се към общността на Търновски фермер</p>
+        </div>
+
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+            <div style="display:none;" aria-hidden="true">
+                <label for="honeyField">Не попълвайте това поле</label>
+                <input type="text" id="honeyField" name="honeyField" value="" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="ivan@example.com" />
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Input.ConfirmPassword" class="form-label fw-semibold"></label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <button id="registerSubmit" type="submit" class="btn btn-organic w-100 py-2">
+                Регистрирай се
+            </button>
+        </form>
+
+        <p class="text-center text-muted small mt-4 mb-0">
+            Вече имаш акаунт?
+            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-success fw-semibold text-decoration-none">Влез тук</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

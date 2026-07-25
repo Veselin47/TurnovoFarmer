@@ -1,0 +1,56 @@
+@model TurnovoFarmer.Models.ViewModels.ScheduleFormViewModel
+
+@{
+    ViewData["Title"] = "Нов график за доставка";
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <partial name="_FarmerNav" />
+        </div>
+        <div class="col-lg-9">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="page-header text-center mb-4">
+                        <h2 class="section-title mb-1">+ Нов ден за разнос</h2>
+                        <p class="section-subtitle small mb-0">Избери зона и дата за нов курс на доставка</p>
+                    </div>
+
+                    <div class="organic-card p-4 p-lg-5">
+                        <form asp-action="CreateSchedule" method="post">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-4">
+                                <label asp-for="ZoneId" class="form-label fw-semibold"></label>
+                                <select asp-for="ZoneId" class="form-select form-select-lg" asp-items="ViewBag.Zones">
+                                    <option value="">— Избери зона —</option>
+                                </select>
+                                <span asp-validation-for="ZoneId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="DeliveryDate" class="form-label fw-semibold"></label>
+                                <input asp-for="DeliveryDate" type="date" class="form-control form-control-lg"
+                                       min="@minDate" />
+                                <span asp-validation-for="DeliveryDate" class="text-danger small"></span>
+                                <small class="text-muted">Минимална дата: @DateTime.Today.ToString("dd.MM.yyyy")</small>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-organic flex-fill py-2">Създай график</button>
+                                <a asp-action="ManageSchedules" class="btn btn-organic-outline py-2">Отказ</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,134 @@
+﻿@model TurnovoFarmer.Models.Order
+
+@{
+    ViewData["Title"] = "Успешна поръчка";
+    var schedule = Model.Schedule;
+    var zone = schedule?.Zone;
+    var paymentLabel = Model.PaymentMethod == "card" ? "Банкова карта (Stripe)" : "В брой при доставка";
+    var deliveryLabel = Model.DeliveryType == "pickup" ? "Взимане от точка" : "Доставка до адрес";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="text-center py-4">
+        <div class="display-1 text-success mb-2">🎉</div>
+        <h1 class="fw-bold text-dark">Благодарим ти за поръчката!</h1>
+        <p class="fs-5 text-muted col-lg-8 mx-auto mt-2">
+            Заявка №<strong>@Model.Id</strong> е записана успешно. Чичо Стефан ще подготви продуктите и ще ги достави в избрания ден.
+        </p>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-3 h-100">
+                <div class="card-header bg-success text-white rounded-top-3 py-3">
+                    <h5 class="mb-0 fw-bold">📦 Детайли за доставка</h5>
+                </div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted">Име</dt>
+                        <dd class="col-sm-7 fw-semibold">@Model.CustomerName</dd>
+
+                        <dt class="col-sm-5 text-muted">Телефон</dt>
+                        <dd class="col-sm-7 fw-semibold">@Model.CustomerPhone</dd>
+
+                        <dt class="col-sm-5 text-muted">Зона</dt>
+                        <dd class="col-sm-7">@(zone?.ZoneName ?? "—")</dd>
+
+                        <dt class="col-sm-5 text-muted">Дата</dt>
+                        <dd class="col-sm-7 fw-semibold text-success">
+                            @(schedule?.DeliveryDate.ToString("dd.MM.yyyy") ?? "—")
+                            @if (zone != null)
+                            {
+                                <span class="text-muted fw-normal">(@zone.DeliveryDay)</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted">Начин</dt>
+                        <dd class="col-sm-7">@deliveryLabel</dd>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.DeliveryAddress))
+                        {
+                            <dt class="col-sm-5 text-muted">Адрес</dt>
+                            <dd class="col-sm-7">@Model.DeliveryAddress</dd>
+                        }
+
+                        @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                        {
+                            <dt class="col-sm-5 text-muted">Локация</dt>
+                            <dd class="col-sm-7">
+                                <small class="text-muted">@Model.Latitude.Value.ToString("F5"), @Model.Longitude.Value.ToString("F5")</small>
+                            </dd>
+                        }
+
+                        <dt class="col-sm-5 text-muted">Плащане</dt>
+                        <dd class="col-sm-7">@paymentLabel</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-3 h-100">
+                <div class="card-header bg-light rounded-top-3 py-3 border-0">
+                    <h5 class="mb-0 fw-bold text-dark">🛒 Поръчани продукти</h5>
+                </div>
+                <div class="card-body p-4">
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <span class="fw-bold">@(item.Product?.Name ?? "Продукт")</span>
+                                <br />
+                                <small class="text-muted">
+                                    @item.Quantity @(item.Product?.UnitType ?? "бр.") × @item.PriceAtPurchase.ToString("0.00") лв.
+                                </small>
+                            </div>
+                            <span class="fw-bold text-success">@((item.Quantity * item.PriceAtPurchase).ToString("0.00")) лв.</span>
+                        </div>
+                    }
+                    <hr />
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5 fw-bold">Обща сума</span>
+                        <span class="fs-4 fw-bold text-success">@Model.TotalAmount.ToString("0.00") лв.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (schedule != null && zone != null)
+    {
+        var progressPercent = zone.MinWeightRequired > 0
+            ? Math.Min(100, (int)((schedule.CurrentTotalWeight / zone.MinWeightRequired) * 100))
+            : 100;
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-10">
+                <div class="card shadow-sm border-0 rounded-3 bg-light p-4">
+                    <h6 class="fw-bold text-dark mb-2">🚛 Статус на курса за @zone.ZoneName</h6>
+                    <p class="text-muted mb-2 small">
+                        Събрани @schedule.CurrentTotalWeight.ToString("0.0") кг от необходимите @zone.MinWeightRequired.ToString("0.0") кг за потвърждение на доставката.
+                    </p>
+                    <div class="progress rounded-pill" style="height: 12px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: @progressPercent%;"
+                             aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    @if (schedule.Status == "confirmed")
+                    {
+                        <p class="text-success fw-semibold mt-2 mb-0 small">✅ Курсът е потвърден — камионът ще тръгне!</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mt-2 mb-0 small">Очакваме още поръчки, за да достигнем минималното тегло.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="text-center mt-5">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-success rounded-pill px-5 py-2 shadow-sm me-2">Към каталога</a>
+        <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-success rounded-pill px-4 py-2">Към количката</a>
+    </div>
+</div>

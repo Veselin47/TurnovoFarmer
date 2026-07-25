@@ -1,0 +1,230 @@
+﻿@model IEnumerable<TurnovoFarmer.Models.CartItem>
+
+@{
+    ViewData["Title"] = "Завършване на поръчката";
+    var schedules = ViewBag.Schedules as List<TurnovoFarmer.Models.DeliverySchedule>;
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-dark fw-bold">📋 Данни за доставка и плащане</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div id="geoAlert" class="alert alert-warning border-0 rounded-3 shadow-sm d-none mb-3"></div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-3 p-4 mb-4">
+                <form asp-controller="Order" asp-action="PlaceOrder" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="deliveryType" value="address" />
+
+                    <div style="display:none;">
+                        <input type="text" name="honeyField" value="" />
+                    </div>
+
+                    <h5 class="text-success fw-bold mb-3">1. Лични данни</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Име и Фамилия</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Иван Иванов" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон за връзка</label>
+                        <input type="tel" name="phone" class="form-control" required placeholder="0888XXXXXX" />
+                    </div>
+
+                    <h5 class="text-success fw-bold mb-3 mt-4">2. Избери ден за доставка (График)</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Кога и къде да доставим?</label>
+                        <select id="scheduleSelect" name="scheduleId" class="form-select" required>
+                            @if (schedules != null && schedules.Any())
+                            {
+                                <option value="">-- Изберете свободен график от списъка --</option>
+                                @foreach (var s in schedules)
+                                {
+                                    <option value="@s.Id">@s.Zone?.ZoneName — @s.DeliveryDate.ToString("dd.MM.yyyy") (@s.Zone?.DeliveryDay)</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="">Няма активни графици. Моля, свържете се с нас.</option>
+                            }
+                        </select>
+                    </div>
+
+                    <h5 class="text-success fw-bold mb-3 mt-4">3. Адрес на доставка</h5>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Въведи адрес (Пинът на картата ще се премести сам):</label>
+                        <input type="text" id="deliveryAddress" name="deliveryAddress" class="form-control" required placeholder="гр. Велико Търново, ул. Христо Ботев №5..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-primary fw-bold">🎯 Или посочи точната локация на картата (Адресът горе ще се попълни автоматично):</label>
+
+                        <input type="hidden" id="Latitude" name="latitude" />
+                        <input type="hidden" id="Longitude" name="longitude" />
+
+                        <div id="map" style="height: 380px; width: 100%; border-radius: 8px; border: 1px solid #ddd; position: relative; z-index: 1;"></div>
+                    </div>
+
+                    <h5 class="text-success fw-bold mb-3 mt-4">4. Начин на плащане</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payCash" value="cash" checked />
+                        <label class="form-check-label" for="payCash">💵 В брой (Наложен платеж при получаване)</label>
+                    </div>
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payCard" value="card" />
+                        <label class="form-check-label" for="payCard">💳 С банкова карта (Онлайн през Stripe)</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-3 rounded-3 fw-bold shadow">Потвърди и поръчай!</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-3 bg-light p-4">
+                <h5 class="fw-bold text-dark mb-3">Твоите продукти</h5>
+                @foreach (var item in Model)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="fw-bold">@item.ProductName</span>
+                            <br />
+                            <small class="text-muted">@item.Quantity @item.UnitType x @item.Price.ToString("0.00") лв.</small>
+                        </div>
+                        <span class="text-success fw-bold">@item.TotalPrice.ToString("0.00") лв.</span>
+                    </div>
+                }
+                <hr />
+                <div class="d-flex justify-content-between">
+                    <span class="fs-5 fw-bold text-dark">Обща сума:</span>
+                    <span class="fs-4 fw-bold text-success">@Model.Sum(i => i.TotalPrice).ToString("0.00") лв.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Координати по подразбиране
+    const coordsVT = [43.0785, 25.6172]; // Велико Търново
+    const coordsGO = [43.1275, 25.6978]; // Горна Оряховица
+    const coordsLY = [43.1064, 25.7118]; // Лясковец
+
+    var map, marker;
+    var debounceTimer;
+
+    document.addEventListener("DOMContentLoaded", function() {
+    // 1. Инициализиране на картата (по подразбиране над В. Търново)
+    map = L.map('map').setView(coordsVT, 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Създаване на маркер, който може да се влачи
+    marker = L.marker(coordsVT, { draggable: true }).addTo(map);
+    updateHiddenCoords(coordsVT[0], coordsVT[1]);
+
+    // 2. Автоматично местене при избор на град от графика
+    const scheduleSelect = document.getElementById('scheduleSelect');
+    if (scheduleSelect) {
+    scheduleSelect.addEventListener('change', function() {
+    const selectedText = this.options[this.selectedIndex].text.toLowerCase();
+
+    if (selectedText.includes("горна")) {
+    moveMapAndMarker(coordsGO);
+    } else if (selectedText.includes("лясковец")) {
+    moveMapAndMarker(coordsLY);
+    } else if (selectedText.includes("търново")) {
+    moveMapAndMarker(coordsVT);
+    }
+    });
+    }
+
+    // 3. От Пин към Адрес (Клик или Влачене на пина)
+    map.on('click', function(e) {
+    marker.setLatLng(e.latlng);
+    updateHiddenCoords(e.latlng.lat, e.latlng.lng);
+    fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    marker.on('dragend', function(e) {
+    var position = marker.getLatLng();
+    updateHiddenCoords(position.lat, position.lng);
+    fetchAddressFromCoords(position.lat, position.lng);
+    });
+
+    // 4. От Адрес към Пин (Писане в текстовото поле)
+    const addressInput = document.getElementById('deliveryAddress');
+    if (addressInput) {
+    addressInput.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const addressValue = this.value.trim();
+    if (addressValue.length < 6) return;
+
+    // Изчакваме 1 секунда след последното натиснато клавишче
+    debounceTimer = setTimeout(() => {
+    fetchCoordsFromAddress(addressValue);
+    }, 1000);
+    });
+    }
+    });
+
+    // Помощна функция за местене на картата и маркера наведнъж
+    function moveMapAndMarker(coords) {
+    map.flyTo(coords, 14);
+    marker.setLatLng(coords);
+    updateHiddenCoords(coords[0], coords[coords.length - 1]);
+    fetchAddressFromCoords(coords[0], coords[coords.length - 1]);
+    }
+
+    // Обновяване на скритите input полета за базата данни
+    function updateHiddenCoords(lat, lng) {
+    document.getElementById('Latitude').value = lat;
+    document.getElementById('Longitude').value = lng;
+    }
+
+    // Номинатим API: Превръща координати в Текст (Reverse)
+    function fetchAddressFromCoords(lat, lng) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=bg`)
+    .then(res => res.json())
+    .then(data => {
+    if (data && data.display_name) {
+    document.getElementById('deliveryAddress').value = data.display_name;
+    }
+    })
+    .catch(err => console.error("Грешка при обратен геокод:", err));
+    }
+
+    // Номинатим API: Превръща Текст в Координати (Forward)
+    function fetchCoordsFromAddress(address) {
+    const alertBox = document.getElementById('geoAlert');
+    alertBox.classList.add('d-none');
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
+    .then(res => res.json())
+    .then(data => {
+    if (data && data.length > 0) {
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+    map.panTo([lat, lon]);
+    marker.setLatLng([lat, lon]);
+    updateHiddenCoords(lat, lon);
+    } else {
+    alertBox.innerText = "Не успяхме да локализираме този адрес автоматично. Моля, преместете пина ръчно на картата.";
+    alertBox.classList.remove('d-none');
+    }
+    })
+    .catch(err => console.error("Грешка при директен геокод:", err));
+    }
+</script>

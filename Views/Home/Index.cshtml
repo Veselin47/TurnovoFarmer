@@ -1,0 +1,146 @@
+﻿@model IEnumerable<TurnovoFarmer.Models.Product>
+
+@{
+    ViewData["Title"] = "Начало - Търновски фермер";
+}
+
+<div class="container py-4">
+    <div class="hero-section">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-6 fw-bold mb-3">Пресни фермерски продукти директно до теб!</h1>
+                <p class="lead mb-0 opacity-90">
+                    Берем специално за теб — без посредници, без компромиси.
+                    Регион Велико Търново · Farm-to-Table доставки.
+                </p>
+            </div>
+            <div class="col-lg-5 mt-4 mt-lg-0">
+                @if (ViewBag.DeliveryZones != null)
+                {
+                    @foreach (var zone in ViewBag.DeliveryZones)
+                    {
+                        <div class="zone-card mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>📍 @zone.ZoneName</strong>
+                                    <p class="small mb-0 mt-1 opacity-75">@zone.PickupLocationDescription</p>
+                                </div>
+                                <span class="zone-day-badge">@zone.DeliveryDay</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <h2 class="section-title">Продукция за тази седмица</h2>
+        <p class="section-subtitle">Откъснато свежо · Директно от градината на чичо Стефан</p>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var product in Model)
+        {
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <div class="product-card h-100">
+                    <div class="product-img-wrap">
+                        <img src="@product.ImageUrl" alt="@product.Name" loading="lazy" />
+                        <span class="category-badge">@product.Category?.Name</span>
+                    </div>
+                    <div class="card-body p-4 d-flex flex-column">
+                        <h5 class="fw-bold text-dark mb-1">@product.Name</h5>
+                        <p class="text-muted small flex-grow-1 mb-3">@product.Description</p>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="price-tag">@product.PricePerUnit.ToString("0.00") лв.</span>
+                                <span class="price-unit">/ @product.UnitType</span>
+                            </div>
+                            <span class="stock-indicator">✅ @product.StockQuantity @product.UnitType</span>
+                        </div>
+
+                        <form asp-controller="Cart" asp-action="AddToCart" method="post" class="ajax-cart-form mt-auto">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-white border-end-0 text-muted">Кол.</span>
+                                <input type="number" name="quantity" value="1.0" step="0.5" min="0.5"
+                                       max="@product.StockQuantity" class="form-control text-center border-start-0 border-end-0" />
+                                <span class="input-group-text bg-white border-start-0 text-muted">@product.UnitType</span>
+                            </div>
+                            <button type="submit" class="btn btn-organic btn-sm w-100 btn-add-cart">
+                                🛒 Добави в количката
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    <div id="cartToast" class="card cart-toast border-0" role="alert"
+         style="width: 340px; display: none;">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-2">
+                <span class="fs-4 me-2">🥦</span>
+                <h6 class="mb-0 fw-bold">Продуктът е добавен!</h6>
+                <button type="button" class="btn-close ms-auto" onclick="closeToast()"></button>
+            </div>
+            <p class="text-muted small mb-3">Искаш ли да завършиш поръчката си?</p>
+            <div class="d-flex gap-2">
+                <a href="/Cart" class="btn btn-organic btn-sm flex-fill">Виж количката</a>
+                <button type="button" class="btn btn-organic-outline btn-sm flex-fill" onclick="closeToast()">Продължи</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.ajax-cart-form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const button = this.querySelector('.btn-add-cart');
+                const originalText = button.innerHTML;
+                button.innerHTML = "Зареждане...";
+                button.disabled = true;
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': this.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    if (response.ok) {
+                        showToast();
+                        button.innerHTML = "✅ Добавено!";
+                        setTimeout(() => { button.innerHTML = originalText; }, 2000);
+                    } else {
+                        response.text().then(msg => alert(msg || "Проблем с наличността. Опитайте отново."));
+                    }
+                })
+                .catch(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            });
+        });
+
+        function showToast() {
+            const toast = document.getElementById('cartToast');
+            toast.style.display = 'block';
+        }
+
+        function closeToast() {
+            document.getElementById('cartToast').style.display = 'none';
+        }
+    </script>
+}

@@ -1,0 +1,35 @@
+@model TurnovoFarmer.Models.ViewModels.ProductFormViewModel
+
+@{
+    ViewData["Title"] = "Редактиране на продукт";
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <partial name="_FarmerNav" />
+        </div>
+        <div class="col-lg-9">
+            <div class="page-header">
+                <h2 class="section-title mb-1">✏️ Редактирай продукт</h2>
+                <p class="section-subtitle small mb-0">Обнови информацията за „@Model.Name"</p>
+            </div>
+
+            <div class="organic-card p-4 p-lg-5">
+                <form asp-action="EditProduct" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <partial name="_ProductForm" model="Model" />
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-organic">Запази промените</button>
+                        <a asp-action="ManageProducts" class="btn btn-organic-outline">Отказ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Търновски фермер</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/TurnovoFarmer.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg organic-navbar">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    🥦 Търновски фермер
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto ms-lg-3">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Начало</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="About">За нас</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav align-items-lg-center gap-lg-1">
+                        <li class="nav-item">
+                            <a class="nav-link btn-cart-nav mx-lg-1 my-1" asp-controller="Cart" asp-action="Index">
+                                🛒 Количка
+                            </a>
+                        </li>
+                        <partial name="_LoginPartial" />
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="organic-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="footer-brand mb-2">🥦 Търновски фермер</div>
+                    <p class="small mb-0">
+                        Пряко от градината на чичо Стефан до вашата врата.
+                        Свежи, местни продукти от региона на Велико Търново.
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Навигация</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-1"><a asp-controller="Home" asp-action="Index">Каталог</a></li>
+                        <li class="mb-1"><a asp-controller="Home" asp-action="About">За нас</a></li>
+                        <li class="mb-1"><a asp-controller="Cart" asp-action="Index">Количка</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>Доставки</h6>
+                    <p class="small mb-1">📍 Велико Търново — всяка сряда</p>
+                    <p class="small mb-1">📍 Горна Оряховица — всяка събота</p>
+                    <p class="small mb-0">📞 Свържете се с нас при въпроси</p>
+                </div>
+            </div>
+            <hr class="footer-divider" />
+            <div class="d-flex flex-wrap justify-content-between align-items-center small">
+                <span>&copy; 2026 Търновски фермер. Всички права запазени.</span>
+                <span class="text-white-50">Farm-to-Table · Co-op доставки</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

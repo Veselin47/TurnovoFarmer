@@ -1,0 +1,182 @@
+﻿@model IEnumerable<TurnovoFarmer.Models.CartItem>
+
+@{
+    ViewData["Title"] = "Количка";
+    decimal cartTotal = Model.Sum(item => item.TotalPrice);
+    decimal totalQty = Model.Sum(i => i.Quantity);
+}
+
+<div class="container py-4">
+    @Html.AntiForgeryToken()
+    <div class="page-header">
+        <h2 class="section-title mb-1">🛒 Твоята количка</h2>
+        <p class="section-subtitle mb-0">Прегледай продуктите преди да продължиш към доставка</p>
+    </div>
+
+    <!-- Място за динамични AJAX грешки (напр. ако надвишим наличността) -->
+    <div id="cartAlert" class="alert alert-danger border-0 rounded-3 shadow-sm d-none"></div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 rounded-3 shadow-sm">@TempData["Error"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <h4 class="fw-bold text-muted">Количката ти е празна</h4>
+            <p class="text-muted">Разгледай каталога и добави свежи продукти.</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-organic mt-2">Към каталога</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="cart-table-wrap">
+                    <table class="table cart-table mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Продукт</th>
+                                <th style="width: 180px;">Количество</th>
+                                <th>Ед. цена</th>
+                                <th>Общо</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr id="row-@item.ProductId">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img src="@item.ImageUrl" alt="@item.ProductName" class="cart-product-img" />
+                                            <span class="fw-semibold">@item.ProductName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <!-- Модерен селектор за количество със стъпка 0.5 за килограми -->
+                                        <div class="input-group input-group-sm" style="max-width: 140px;">
+                                            <button class="btn btn-outline-secondary border-end-0 rounded-start-pill px-2"
+                                                    type="button" onclick="changeQtyInline(@item.ProductId, -0.5)">
+                                                -
+                                            </button>
+
+                                            <input type="number"
+                                                   id="qty-@item.ProductId"
+                                                   class="form-control text-center bg-white border-start-0 border-end-0 fw-bold input-qty-field"
+                                                   value="@item.Quantity.ToString("0.0")"
+                                                   step="0.5"
+                                                   min="0.5"
+                                                   onchange="updateQtyAjax(@item.ProductId, this.value)" />
+
+                                            <button class="btn btn-outline-secondary border-start-0 rounded-end-pill px-2"
+                                                    type="button" onclick="changeQtyInline(@item.ProductId, 0.5)">
+                                                +
+                                            </button>
+                                        </div>
+                                        <small class="text-muted ms-2">@item.UnitType</small>
+                                    </td>
+                                    <td class="text-muted">@item.Price.ToString("0.00") лв.</td>
+                                    <td class="fw-bold text-success">
+                                        <span id="total-@item.ProductId">@item.TotalPrice.ToString("0.00")</span> лв.
+                                    </td>
+                                    <td>
+                                        <a asp-action="RemoveFromCart" asp-route-productId="@item.ProductId"
+                                           class="btn btn-sm btn-outline-danger rounded-pill px-2">✕</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="cart-summary-card">
+                    <h5 class="fw-bold mb-4">Равносметка</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Продукти</span>
+                        <span class="fw-semibold"><span id="summaryCount">@Model.Count()</span> бр.</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Общо количество</span>
+                        <span class="fw-semibold"><span id="summaryQty">@totalQty.ToString("0.##")</span></span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold fs-5">Обща сума</span>
+                        <span class="cart-summary-total"><span id="summaryTotal">@cartTotal.ToString("0.00")</span> лв.</span>
+                    </div>
+                    <a asp-controller="Order" asp-action="Checkout" class="btn btn-organic w-100 py-2">
+                        Продължи към доставка ➔
+                    </a>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-organic-outline w-100 mt-2 py-2">
+                        ← Към каталога
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Функция за управление от бутоните + и -
+        function changeQtyInline(productId, delta) {
+            const input = document.getElementById(`qty-${productId}`);
+            let currentVal = parseFloat(input.value);
+            let newVal = currentVal + delta;
+            if (newVal < 0.5) newVal = 0.5; // Минимално количество
+            input.value = newVal.toFixed(1);
+            updateQtyAjax(productId, newVal);
+        }
+
+                 function updateQtyAjax(productId, newQty) {
+            const alertBox = document.getElementById('cartAlert');
+            alertBox.classList.add('d-none');
+
+            // Взимаме токена
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            const params = new URLSearchParams();
+            params.append('productId', productId);
+            params.append('quantity', newQty.toString()); // Изпращаме го като чист текст
+            params.append('__RequestVerificationToken', token);
+
+            fetch('/Cart/UpdateQuantity', {
+                method: 'POST',
+                body: params,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(async response => {
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Обновяваме сумите на екрана
+                    document.getElementById(`total-${productId}`).innerText = data.itemTotalPrice.toFixed(2);
+                    document.getElementById('summaryQty').innerText = data.cartTotalQty.toFixed(1);
+                    document.getElementById('summaryTotal').innerText = data.cartTotalAmount.toFixed(2);
+                } else {
+                    // Изписваме реалната грешка от сървъра в червеното поле най-горе
+                    const errorText = await response.text();
+                    alertBox.innerText = errorText || "Грешка при обновяване на количеството.";
+                    alertBox.classList.remove('d-none');
+
+                    // Връщаме старото число след 2.5 секунди
+                    setTimeout(() => { location.reload(); }, 2500);
+                }
+            })
+            .catch(err => {
+                console.error("Грешка:", err);
+                alertBox.innerText = "Грешка при връзката със сървъра.";
+                alertBox.classList.remove('d-none');
+            });
+        }
+    </script>
+}

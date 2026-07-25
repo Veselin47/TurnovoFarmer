@@ -1,0 +1,96 @@
+@model IEnumerable<TurnovoFarmer.Models.Product>
+
+@{
+    ViewData["Title"] = "Управление на продукти";
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <partial name="_FarmerNav" />
+        </div>
+        <div class="col-lg-9">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                <div>
+                    <h2 class="section-title mb-1">📦 Управление на продукти</h2>
+                    <p class="section-subtitle small mb-0">Добавяй, редактирай и архивирай продукти от инвентара</p>
+                </div>
+                <a asp-action="CreateProduct" class="btn btn-organic">+ Нов продукт</a>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success border-0 rounded-3 shadow-sm">@TempData["Success"]</div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <h5 class="fw-bold">Няма продукти</h5>
+                    <p class="text-muted">Добавете първия продукт в каталога.</p>
+                    <a asp-action="CreateProduct" class="btn btn-organic mt-2">+ Добави продукт</a>
+                </div>
+            }
+            else
+            {
+                <div class="farmer-table">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Снимка</th>
+                                    <th>Продукт</th>
+                                    <th>Категория</th>
+                                    <th>Цена</th>
+                                    <th>Наличност</th>
+                                    <th>Статус</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var product in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <img src="@product.ImageUrl" alt="@product.Name" class="product-thumb" />
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold">@product.Name</span>
+                                            @if (!string.IsNullOrWhiteSpace(product.Description))
+                                            {
+                                                <br /><small class="text-muted">@(product.Description.Length > 50 ? product.Description[..50] + "…" : product.Description)</small>
+                                            }
+                                        </td>
+                                        <td><span class="badge bg-light text-dark">@product.Category?.Name</span></td>
+                                        <td class="fw-semibold">@product.PricePerUnit.ToString("0.00") лв./@product.UnitType</td>
+                                        <td>@product.StockQuantity @product.UnitType</td>
+                                        <td>
+                                            @if (product.IsActive)
+                                            {
+                                                <span class="status-badge-active">Активен</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge-inactive">Неактивен</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <a asp-action="EditProduct" asp-route-id="@product.Id"
+                                               class="btn btn-sm btn-organic-outline me-1">Редактирай</a>
+                                            <form asp-action="DeleteProduct" asp-route-id="@product.Id" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Сигурни ли сте, че искате да архивирате този продукт?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Изтрий</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

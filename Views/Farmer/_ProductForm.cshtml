@@ -1,0 +1,57 @@
+@model TurnovoFarmer.Models.ViewModels.ProductFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <label asp-for="Name" class="form-label fw-semibold"></label>
+        <input asp-for="Name" class="form-control" placeholder="напр. Розов домат (био)" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="CategoryId" class="form-label fw-semibold"></label>
+        <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.Categories">
+            <option value="">— Избери категория —</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Description" class="form-label fw-semibold"></label>
+        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Кратко описание на продукта..."></textarea>
+        <span asp-validation-for="Description" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="PricePerUnit" class="form-label fw-semibold"></label>
+        <div class="input-group">
+            <input asp-for="PricePerUnit" class="form-control" step="0.01" min="0.01" />
+            <span class="input-group-text">лв.</span>
+        </div>
+        <span asp-validation-for="PricePerUnit" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="StockQuantity" class="form-label fw-semibold"></label>
+        <input asp-for="StockQuantity" class="form-control" step="0.5" min="0" />
+        <span asp-validation-for="StockQuantity" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="UnitType" class="form-label fw-semibold"></label>
+        <select asp-for="UnitType" class="form-select">
+            <option value="kg">кг (kg)</option>
+            <option value="jar">буркан (jar)</option>
+            <option value="piece">брой (piece)</option>
+            <option value="bunch">връзка (bunch)</option>
+        </select>
+        <span asp-validation-for="UnitType" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="ImageUrl" class="form-label fw-semibold"></label>
+        <input asp-for="ImageUrl" class="form-control" placeholder="/images/products/domati.jpg" />
+        <span asp-validation-for="ImageUrl" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label fw-semibold"></label>
+        </div>
+    </div>
+</div>

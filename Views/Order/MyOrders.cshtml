@@ -1,0 +1,136 @@
+@model IEnumerable<TurnovoFarmer.Models.Order>
+
+@{
+    ViewData["Title"] = "Моите поръчки";
+    string OrderStatusLabel(string status) => status switch
+    {
+        "pending_course" => "Изчаква курс",
+        "processing" => "В подготовка",
+        "in_transit" => "В доставка",
+        "delivered" => "Доставена",
+        "cancelled" => "Отменена",
+        _ => status
+    };
+    string OrderStatusClass(string status) => status switch
+    {
+        "pending_course" => "bg-warning text-dark",
+        "processing" => "bg-info text-dark",
+        "in_transit" => "bg-primary",
+        "delivered" => "bg-success",
+        "cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
+    string PaymentLabel(string method) => method == "card" ? "Карта" : "В брой";
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h2 class="section-title mb-1">📦 Моите поръчки</h2>
+        <p class="section-subtitle mb-0">История и текущ статус на вашите заявки</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h4 class="fw-bold text-muted">Все още нямате поръчки</h4>
+            <p class="text-muted">Разгледайте каталога и направете първата си поръчка.</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-organic mt-2">Към каталога</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var order in Model)
+            {
+                var schedule = order.Schedule;
+                var zone = schedule?.Zone;
+
+                <div class="col-12">
+                    <div class="organic-card p-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1">Поръчка №@order.Id</h5>
+                                <small class="text-muted">Направена на @order.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge @OrderStatusClass(order.OrderStatus) rounded-pill px-3 py-2">
+                                    @OrderStatusLabel(order.OrderStatus)
+                                </span>
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                                    💳 @PaymentLabel(order.PaymentMethod)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Доставка</small>
+                                <span class="fw-semibold">
+                                    @(schedule?.DeliveryDate.ToString("dd.MM.yyyy") ?? "—")
+                                    @if (zone != null)
+                                    {
+                                        <span class="text-muted">· @zone.ZoneName</span>
+                                    }
+                                </span>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Начин</small>
+                                <span class="fw-semibold">@(order.DeliveryType == "pickup" ? "Взимане от точка" : "Доставка до адрес")</span>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Адрес</small>
+                                <span class="fw-semibold">
+                                    @if (!string.IsNullOrWhiteSpace(order.DeliveryAddress))
+                                    {
+                                        @order.DeliveryAddress
+                                    }
+                                    else if (order.Latitude.HasValue)
+                                    {
+                                        <span class="text-muted">📍 Координати на картата</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Продукт</th>
+                                        <th>Количество</th>
+                                        <th>Цена</th>
+                                        <th class="text-end">Общо</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in order.OrderItems)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@(item.Product?.Name ?? "Продукт")</td>
+                                            <td>@item.Quantity @(item.Product?.UnitType ?? "")</td>
+                                            <td>@item.PriceAtPurchase.ToString("0.00") лв.</td>
+                                            <td class="text-end fw-bold text-success">
+                                                @((item.Quantity * item.PriceAtPurchase).ToString("0.00")) лв.
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Обща сума:</td>
+                                        <td class="text-end fw-bold text-success fs-5">@order.TotalAmount.ToString("0.00") лв.</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
